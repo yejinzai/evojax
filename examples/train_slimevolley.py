@@ -43,10 +43,9 @@ import jax
 
 from evojax.task.slimevolley import SlimeVolley
 from evojax.policy.mlp import MLPPolicy
-from evojax.algo import CMA
+from evojax.algo import CMA, SimpleGA
 from evojax import Trainer
 from evojax import util
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -55,7 +54,7 @@ def parse_args():
     parser.add_argument(
         '--hidden-size', type=int, default=20, help='Policy hidden size.')
     parser.add_argument(
-        '--num-tests', type=int, default=100, help='Number of test rollouts.')
+        '--num-tests', type=int, default=1000, help='Number of test rollouts.')
     parser.add_argument(
         '--n-repeats', type=int, default=16, help='Training repetitions.')
     parser.add_argument(
@@ -77,7 +76,7 @@ def parse_args():
 
 
 def main(config):
-    log_dir = './log/slimevolley'
+    log_dir = './log/slimevolley/ev'
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
     logger = util.create_logger(
@@ -94,6 +93,7 @@ def main(config):
         output_dim=train_task.act_shape[0],
         output_act_fn='tanh',
     )
+
     solver = CMA(
         pop_size=config.pop_size,
         param_size=policy.num_params,
@@ -101,6 +101,16 @@ def main(config):
         seed=config.seed,
         logger=logger,
     )
+
+    #solver = SimpleGA(
+    #    pop_size=config.pop_size,
+    #    param_size=policy.num_params,
+    #    #init_stdev=config.init_std,
+    #    seed=config.seed,
+    #    logger=logger,
+    #    sigma=0.05
+    #)
+
     # Train.
     trainer = Trainer(
         policy=policy,
@@ -116,12 +126,12 @@ def main(config):
         log_dir=log_dir,
         logger=logger,
     )
-    trainer.run(demo_mode=False)
+    #trainer.run(demo_mode=False)
 
     # Test the final model.
     src_file = os.path.join(log_dir, 'best.npz')
     tar_file = os.path.join(log_dir, 'model.npz')
-    shutil.copy(src_file, tar_file)
+    #shutil.copy(src_file, tar_file)
     trainer.model_dir = log_dir
     trainer.run(demo_mode=True)
 
